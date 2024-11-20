@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live JSON Data</title>
+    <!-- Meta tags for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <!-- Google Fonts for Inter font (similar to SF Pro) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        #json-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #json-data {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            white-space: pre-wrap;
+            font-family: 'Inter', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid #333;
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        /* JSON syntax highlighting */
+        .json-key {
+            color: #a5b4fc;
+        }
+        .json-string {
+            color: #86efac;
+        }
+        .json-number {
+            color: #fbbf24;
+        }
+        .json-boolean {
+            color: #7dd3fc;
+        }
+        .json-null {
+            color: #c4b5fd;
+        }
+
+        .error, .loading, #update-status {
+            text-align: center;
+            color: #ff6b6b;
+            padding: 15px;
+            background-color: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            border: 1px solid #ff6b6b;
+            margin-top: 20px;
+        }
+
+        .loading {
+            color: #71717a;
+            font-size: 16px;
+        }
+
+        #update-status {
+            background-color: rgba(113, 113, 122, 0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #71717a;
+            border: 1px solid #71717a;
+            margin-top: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin-bottom: 15px;
+            }
+
+            #json-data {
+                font-size: 12px;
+                padding: 15px;
+            }
+
+            .loading {
+                font-size: 14px;
+            }
+        }
+
+        /* Description styling */
+        .description {
+            font-size: 1.2em;
+            color: #a5a5a5;
+            margin-top: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live JSON Data</h1>
+    <div id="json-container">
+        <div id="json-data">Loading...</div>
+    </div>
+    <div id="update-status">Last updated: Never</div>
+    <div class="description">Road to 500k</div>
+
+    <script>
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\\s*:)?|\\b(true|false|null)\\b|-?\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?)/g, function(match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            $('#update-status').text('Last updated: ' + timeString);
+        }
+
+        $(document).ready(function() {
+            function fetchData() {
+                $('#json-data').html('<div class="loading">Fetching data...</div>');
+
+                $.ajax({
+                    url: '/tracker',
+                    type: 'GET',
+                    success: function(data) {
+                        const highlighted = syntaxHighlight(data);
+                        $('#json-data').html(highlighted);
+                        updateTimestamp();
+                    },
+                    error: function(error) {
+                        console.error('Error fetching data:', error);
+                        $('#json-data').html('<div class="error">⚠️ Error fetching data. Please check your connection.</div>');
+                    }
+                });
+            }
+
+            // Initial fetch
+            fetchData();
+
+            // Periodically fetch data every 5 seconds
+            setInterval(fetchData, 5000);
+        });
+    </script>
+</body>
+</html>
+'''
